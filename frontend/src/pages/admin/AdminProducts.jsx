@@ -57,7 +57,7 @@ export default function AdminProducts() {
         <div className="lg:col-span-1">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">{editing ? 'Modifier' : 'Nouveau produit'}</h2>
           <form onSubmit={save} className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-            {[['Nom *', 'nom', 'text', true], ['Prix (DA) *', 'prix', 'number', true], ['Stock', 'stock', 'number', false], ['Date expiration', 'date_expiration', 'date', false]].map(([label, field, type, req]) => (
+            {[['Nom', 'nom', 'text', true], ['Prix (DA)', 'prix', 'number', true], ['Stock', 'stock', 'number', false], ['Date expiration', 'date_expiration', 'date', false]].map(([label, field, type, req]) => (
               <div key={field}>
                 <label className="text-sm font-medium text-gray-700">{label}</label>
                 <input type={type} required={req} value={form[field]} onChange={set(field)}

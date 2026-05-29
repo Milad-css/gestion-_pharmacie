@@ -34,7 +34,7 @@ export default function AdminCategories() {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">{editing ? 'Modifier' : 'Nouvelle catégorie'}</h2>
           <form onSubmit={save} className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
             <div>
-              <label className="text-sm font-medium text-gray-700">Nom *</label>
+              <label className="text-sm font-medium text-gray-700">Nom</label>
               <input required value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })}
                 className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
