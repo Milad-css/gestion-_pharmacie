@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: gestion-pharmacie-backend
+    env: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: gestion-pharmacie-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: gestion-pharmacie-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: gestion-pharmacie-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: gestion-pharmacie-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: gestion-pharmacie-db
+          property: password
+
+databases:
+  - name: gestion-pharmacie-db
+    plan: free
+    databaseName: gestion_pharmacie
