@@ -1,420 +1,575 @@
-﻿# Documentation — Gestion Pharmacie
+# Documentation complète — Gestion Pharmacie
 
-## Structure du projet
+---
+
+## 1. Présentation du projet
+
+Application web de gestion d'une pharmacie en ligne.
+Elle permet à des clients de commander des médicaments, et à l'administrateur de gérer les produits, les catégories et les commandes.
+
+**Technologies utilisées**
+
+| Côté | Technologies |
+|------|-------------|
+| Backend | PHP 8, Laravel 13, SQLite, Laravel Sanctum |
+| Frontend | React 18, Vite, Tailwind CSS, Axios |
+
+---
+
+## 2. Répartition du travail
+
+### Mouhcine — Backend Laravel
+
+**Base de données**
+- Création des migrations (6 tables)
+- Création des modèles Eloquent avec leurs relations
+- Seeder : 2 comptes, 6 catégories, 12 produits
+
+**Authentification**
+- `AuthController` : register, login, logout, profile, updateProfile
+- Configuration de Laravel Sanctum
+- Middleware `AdminMiddleware`
+
+**Contrôleurs**
+- `CategoryController` : CRUD des catégories
+- `CartController` : gestion du panier
+- `ProductController` : CRUD produits avec upload d'image
+- `OrderController` : passage de commande avec transaction DB
+
+**Configuration API**
+- Fichier `routes/api.php` : 25 routes organisées
+- Configuration CORS
+
+---
+
+### Milad — Frontend React
+
+**Configuration**
+- Mise en place React + Vite + Tailwind CSS
+- Configuration Axios avec token automatique
+- Hook `useAuth` : connexion, inscription, déconnexion
+- Hook `useCart` : panier synchronisé entre les composants
+
+**Pages Client**
+- Page `Login` : formulaire + redirection selon le rôle
+- Page `Register` : inscription + gestion des erreurs
+- Page `Home` : catalogue, recherche, filtre, pagination
+- Page `ProductDetail` : détail produit + sélecteur de quantité
+- Page `Cart` : panier + formulaire de commande
+- Page `Orders` : liste des commandes avec accordéon
+- Page `Profile` : modification du profil et mot de passe
+
+**Composants**
+- `Navbar` : liens selon le rôle de l'utilisateur
+- `ProtectedRoute` et `AdminRoute` : protection des pages
+
+**Pages Admin**
+- `Dashboard` : statistiques (produits, catégories, commandes)
+- `AdminProducts` : CRUD complet avec upload d'image
+- `AdminCategories` : CRUD des catégories
+- `AdminOrders` : gestion des statuts de commandes
+
+**Documentation**
+- Rédaction de la documentation technique
+- Schéma UML et rapport final
+
+---
+
+## 3. Base de données
+
+### Tables et colonnes
+
+**users**
+```
+id | name | email | password | role (admin/client) | telephone | adresse
+```
+
+**categories**
+```
+id | nom | description
+```
+
+**products**
+```
+id | category_id | nom | description | prix | stock | image | date_expiration | actif
+```
+
+**orders**
+```
+id | user_id | total | statut | adresse | telephone | notes
+statut : en_attente / confirmee / livree / annulee
+```
+
+**order_items**
+```
+id | order_id | product_id | quantite | prix_unitaire
+```
+
+**cart_items**
+```
+id | user_id | product_id | quantite
+```
+
+### Relations entre les tables
 
 ```
-gestion _pharmacie/
-├── backend/        (Laravel 13 — API REST)
-└── frontend/       (React + Vite + Tailwind CSS)
+User       →  hasMany  →  Orders
+User       →  hasMany  →  CartItems
+Category   →  hasMany  →  Products
+Order      →  hasMany  →  OrderItems
+OrderItem  →  belongsTo → Product
+CartItem   →  belongsTo → Product
 ```
 
 ---
 
-## ETAPE 1 — Base de données (Migrations)
+## 4. Routes API
 
-Chaque migration crée une table dans la base SQLite.
+### Routes publiques (pas besoin d'être connecté)
 
-### `create_users_table`
-Table des utilisateurs (fournie par Laravel par défaut).
-
-### `create_personal_access_tokens_table`
-Table des tokens Sanctum pour l'authentification par token Bearer.
-
-### `create_categories_table`
-```
-id | nom | description | created_at | updated_at
-```
-Catégories des médicaments (ex: Analgésiques, Antibiotiques…).
-
-### `create_products_table`
-```
-id | category_id | nom | description | prix | stock | image | date_expiration | actif | timestamps
-```
-- `category_id` : clé étrangère vers categories (nullable)
-- `prix` : decimal(10,2)
-- `stock` : entier, default 0
-- `actif` : booléen, default true
-- `date_expiration` : date nullable
-
-### `create_orders_table`
-```
-id | user_id | total | statut | adresse | telephone | notes | timestamps
-```
-- `statut` : enum ['en_attente', 'confirmee', 'livree', 'annulee']
-- `user_id` : clé étrangère vers users (cascade delete)
-
-### `create_order_items_table`
-```
-id | order_id | product_id | quantite | prix_unitaire | timestamps
-```
-Lignes de chaque commande. `prix_unitaire` sauvegardé au moment de la commande.
-
-### `create_cart_items_table`
-```
-id | user_id | product_id | quantite | timestamps
-```
-Panier temporaire de chaque utilisateur.
-
-### `add_role_to_users_table`
-Ajoute 3 colonnes à la table users :
-- `role` : enum ['admin', 'client'], default 'client'
-- `telephone` : string nullable
-- `adresse` : string nullable
-
----
-
-## ETAPE 2 — Modèles Eloquent
-
-### `User`
-- **fillable** : name, email, password, role, telephone, adresse
-- **hidden** : password, remember_token
-- **trait** : `HasApiTokens` (Sanctum)
-- **isAdmin()** : retourne true si role === 'admin'
-- **orders()** : hasMany Order
-- **cartItems()** : hasMany CartItem
-
-### `Category`
-- **fillable** : nom, description
-- **products()** : hasMany Product
-
-### `Product`
-- **fillable** : category_id, nom, description, prix, stock, image, date_expiration, actif
-- **casts** : prix → decimal:2, actif → boolean, date_expiration → date
-- **category()** : belongsTo Category
-- **cartItems()** : hasMany CartItem
-- **orderItems()** : hasMany OrderItem
-
-### `Order`
-- **fillable** : user_id, total, statut, adresse, telephone, notes
-- **casts** : total → decimal:2
-- **user()** : belongsTo User
-- **items()** : hasMany OrderItem
-
-### `OrderItem`
-- **fillable** : order_id, product_id, quantite, prix_unitaire
-- **order()** : belongsTo Order
-- **product()** : belongsTo Product
-
-### `CartItem`
-- **fillable** : user_id, product_id, quantite
-- **user()** : belongsTo User
-- **product()** : belongsTo Product
-
----
-
-## ETAPE 3 — Routes API (`routes/api.php`)
-
-### Routes publiques (sans authentification)
-| Méthode | URL | Description |
-|---------|-----|-------------|
-| POST | /api/register | Inscription |
-| POST | /api/login | Connexion |
+| Méthode | URL | Action |
+|---------|-----|--------|
+| POST | /api/register | Créer un compte |
+| POST | /api/login | Se connecter |
+| GET | /api/products | Liste des produits |
+| GET | /api/products/{id} | Détail d'un produit |
 | GET | /api/categories | Liste des catégories |
 | GET | /api/categories/{id} | Détail d'une catégorie |
-| GET | /api/products | Liste des produits (filtrable) |
-| GET | /api/products/{id} | Détail d'un produit |
 
-### Routes authentifiées (middleware `auth:sanctum`)
-| Méthode | URL | Description |
-|---------|-----|-------------|
-| POST | /api/logout | Déconnexion |
-| GET | /api/profile | Profil connecté |
-| PUT | /api/profile | Modifier le profil |
-| GET | /api/cart | Voir le panier |
+### Routes client (doit être connecté)
+
+| Méthode | URL | Action |
+|---------|-----|--------|
+| POST | /api/logout | Se déconnecter |
+| GET | /api/profile | Voir son profil |
+| PUT | /api/profile | Modifier son profil |
+| GET | /api/cart | Voir son panier |
 | POST | /api/cart | Ajouter au panier |
 | PUT | /api/cart/{id} | Modifier la quantité |
-| DELETE | /api/cart/{id} | Supprimer un article |
+| DELETE | /api/cart/{id} | Retirer un article |
 | DELETE | /api/cart | Vider le panier |
-| GET | /api/orders | Mes commandes |
 | POST | /api/orders | Passer une commande |
+| GET | /api/orders | Mes commandes |
 | GET | /api/orders/{id} | Détail d'une commande |
 
-### Routes admin (middleware `auth:sanctum` + `admin`)
-| Méthode | URL | Description |
-|---------|-----|-------------|
+### Routes admin (doit être admin)
+
+| Méthode | URL | Action |
+|---------|-----|--------|
 | POST | /api/categories | Créer une catégorie |
 | PUT | /api/categories/{id} | Modifier une catégorie |
 | DELETE | /api/categories/{id} | Supprimer une catégorie |
 | POST | /api/products | Créer un produit |
-| POST | /api/products/{id} | Modifier un produit (avec image) |
+| POST | /api/products/{id} | Modifier un produit |
 | DELETE | /api/products/{id} | Supprimer un produit |
 | GET | /api/admin/orders | Toutes les commandes |
 | PUT | /api/admin/orders/{id} | Changer le statut |
 
 ---
 
-## ETAPE 4 — Contrôleurs
+## 5. Contrôleurs Backend
 
-### `AuthController`
+### AuthController
 
-**register()**
-- Valide : name, email (unique), password (min:8, confirmé), telephone, adresse
-- Crée l'utilisateur, génère un token Sanctum
-- Retourne `{ user, token }` — HTTP 201
+**register()** — Inscription
+- Valide les champs (nom, email unique, mot de passe min 8 caractères)
+- Crée le compte et génère un token
+- Retourne `{ user, token }`
 
-**login()**
-- Valide : email, password
-- Cherche l'utilisateur, vérifie le mot de passe avec `Hash::check()`
-- Si incorrect → lève `ValidationException`
-- Génère un token et retourne `{ user, token }`
+**login()** — Connexion
+- Vérifie email et mot de passe
+- Génère un token Sanctum
+- Retourne `{ user, token }`
 
-**logout()**
-- Supprime le token actuel via `currentAccessToken()->delete()`
-- Retourne un message de confirmation
+**logout()** — Déconnexion
+- Supprime le token actuel
 
-**profile()**
-- Retourne l'utilisateur connecté (`$request->user()`)
+**profile()** — Profil
+- Retourne les données de l'utilisateur connecté
 
-**updateProfile()**
-- Valide et met à jour : name, telephone, adresse, password (optionnel)
-- Hash le mot de passe si fourni
-- Retourne l'utilisateur mis à jour
+**updateProfile()** — Modifier le profil
+- Met à jour nom, téléphone, adresse
+- Change le mot de passe si fourni
 
 ---
 
-### `CategoryController`
+### CategoryController
 
-**index()**
-- Retourne toutes les catégories avec le compte de produits (`withCount('products')`)
+**index()** — Liste
+- Retourne toutes les catégories avec le nombre de produits
 
-**show(Category $category)**
-- Retourne la catégorie avec ses produits chargés (`load('products')`)
+**store()** — Créer
+- Valide et crée une catégorie
 
-**store()**
-- Valide : nom (requis), description (nullable)
-- Crée et retourne la catégorie — HTTP 201
+**update()** — Modifier
+- Valide et modifie une catégorie
 
-**update()**
-- Valide et met à jour les champs fournis
-
-**destroy()**
-- Supprime la catégorie — HTTP 204
+**destroy()** — Supprimer
+- Supprime une catégorie
 
 ---
 
-### `ProductController`
+### ProductController
 
-**index()**
-- Filtre par `actif = true`
-- Paramètres optionnels : `category_id`, `search` (LIKE sur le nom)
-- Retourne les produits paginés (20 par page) avec leur catégorie
+**index()** — Liste
+- Retourne les produits actifs, paginés (20 par page)
+- Filtres : `category_id`, `search` (recherche par nom)
 
-**show(Product $product)**
-- Retourne le produit avec sa catégorie
+**store()** — Créer
+- Valide les champs + image (max 2 Mo)
+- Stocke l'image dans `storage/app/public/products/`
 
-**store()**
-- Valide tous les champs dont `image` (max 2048 Ko)
-- Stocke l'image dans `storage/app/public/products/` si fournie
-- Crée le produit — HTTP 201
+**update()** — Modifier
+- Même logique, supprime l'ancienne image si remplacée
 
-**update()**
-- Même logique que store() mais pour modification
-- Supprime l'ancienne image si une nouvelle est fournie
-
-**destroy()**
-- Supprime l'image du disque si elle existe
-- Supprime le produit — HTTP 204
+**destroy()** — Supprimer
+- Supprime le produit et son image
 
 ---
 
-### `CartController`
+### CartController
 
-**index()**
-- Charge les articles du panier avec produit + catégorie
-- Calcule le total : `sum(prix * quantite)`
-- Retourne `{ items, total }`
+**index()** — Voir le panier
+- Retourne `{ items, total }` avec les produits associés
 
-**add()**
-- Si le produit est déjà dans le panier → incrémente la quantité
+**add()** — Ajouter
+- Si le produit est déjà dans le panier → augmente la quantité
 - Sinon → crée un nouvel article
-- Retourne l'article — HTTP 201
 
-**update(CartItem $cartItem)**
-- Vérifie que l'article appartient à l'utilisateur connecté (403 sinon)
-- Met à jour la quantité
+**update()** — Modifier la quantité
+- Vérifie que l'article appartient à l'utilisateur (403 sinon)
 
-**remove(CartItem $cartItem)**
-- Vérifie appartenance, supprime l'article — HTTP 204
-
-**clear()**
-- Supprime tous les articles du panier de l'utilisateur — HTTP 204
+**remove()** — Supprimer un article
+**clear()** — Vider tout le panier
 
 ---
 
-### `OrderController`
+### OrderController
 
-**index()**
-- Retourne toutes les commandes de l'utilisateur connecté avec articles + produits
+**store()** — Passer une commande
+1. Vérifie que le panier n'est pas vide
+2. Vérifie le stock de chaque produit
+3. Dans une transaction base de données :
+   - Crée la commande avec le total calculé
+   - Crée une ligne par produit (`prix_unitaire` sauvegardé)
+   - Décrémente le stock
+   - Vide le panier
 
-**show(Order $order)**
-- Accessible par le propriétaire ou un admin (403 sinon)
-
-**store()**
-- Récupère le panier de l'utilisateur
-- Vérifie que le panier n'est pas vide (422)
-- Vérifie le stock disponible pour chaque produit (422 si insuffisant)
-- Dans une **transaction DB** :
-  1. Calcule le total
-  2. Crée la commande
-  3. Crée les OrderItems (avec `prix_unitaire` snapshot)
-  4. Décrémente le stock de chaque produit
-  5. Vide le panier
-- Retourne la commande — HTTP 201
-
-**adminIndex()**
-- Toutes les commandes paginées avec utilisateur + articles (réservé admin)
-
-**updateStatus()**
-- Valide le nouveau statut
-- Met à jour et retourne la commande
+**adminIndex()** — Toutes les commandes (admin)
+**updateStatus()** — Changer le statut (admin)
 
 ---
 
-## ETAPE 5 — Middleware `AdminMiddleware`
+### AdminMiddleware
 
-Vérifie que l'utilisateur connecté a le rôle `admin`.
-Retourne HTTP 403 sinon.
-Enregistré sous l'alias `admin` dans `bootstrap/app.php`.
-
----
-
-## ETAPE 6 — Configuration
-
-### CORS (`config/cors.php`)
-- Autorise les origines : `http://localhost:5173`, `http://localhost:3000`
-- Couvre tous les paths `/api/*` et `/sanctum/csrf-cookie`
-
-### Storage
-- Lien symbolique `public/storage → storage/app/public`
-- Permet d'accéder aux images via `http://localhost:8000/storage/products/...`
+Vérifie que l'utilisateur a le rôle `admin`.
+Retourne une erreur 403 sinon.
 
 ---
 
-## ETAPE 7 — Seeder (`DatabaseSeeder`)
+## 6. Frontend React
 
-Crée les données initiales :
+### Configuration Axios (`src/api/axios.js`)
 
-**Utilisateurs**
-- Admin : `admin@pharmacie.com` / `password`
-- Client : `client@test.com` / `password`
+Chaque requête vers l'API ajoute automatiquement le token d'authentification.
 
-**6 catégories**
-Analgésiques, Antibiotiques, Vitamines & Compléments, Dermatologie, Cardiologie, Diabétologie
+```js
+import axios from 'axios'
 
-**12 produits**
-Un à trois produits par catégorie avec prix, stock et date d'expiration.
+const api = axios.create({
+  baseURL: 'http://localhost:8000/api',
+  headers: { Accept: 'application/json' },
+})
 
----
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) config.headers.Authorization = 'Bearer ' + token
+  return config
+})
 
-## ETAPE 8 — Frontend React
-
-### `src/api/axios.js`
-Instance axios configurée :
-- `baseURL` : `http://localhost:8000/api`
-- Intercepteur de requête : ajoute automatiquement `Authorization: Bearer <token>` depuis localStorage
-
-### `src/context/AuthContext.jsx`
-Contexte global d'authentification :
-- **État** : `user`, `loading`
-- **Au démarrage** : si token en localStorage → appel `/profile` pour récupérer l'utilisateur
-- **login()** : POST /login, stocke le token, met à jour `user`
-- **register()** : POST /register, idem
-- **logout()** : POST /logout, supprime le token, réinitialise `user`
-
-### `src/context/CartContext.jsx`
-Contexte global du panier :
-- Se synchronise automatiquement avec le backend quand `user` change
-- **addToCart(productId, qty)** : POST /cart + re-fetch
-- **updateItem(id, qty)** : PUT /cart/{id} + re-fetch
-- **removeItem(id)** : DELETE /cart/{id} + re-fetch
-- **clearCart()** : DELETE /cart
-- **itemCount** : total des articles (pour le badge navbar)
-
-### `src/components/Navbar.jsx`
-- Liens selon l'état de connexion (client vs admin vs non connecté)
-- Badge panier avec `itemCount` du CartContext
-
-### `src/components/ProtectedRoute.jsx`
-- **ProtectedRoute** : redirige vers /login si non connecté
-- **AdminRoute** : redirige vers /login si non connecté, vers / si non admin
+export default api
+```
 
 ---
 
-### Pages
+### Hook useAuth (`src/hooks/useAuth.js`)
 
-#### `pages/Login.jsx`
-- Formulaire email + mot de passe
-- Appelle `login()` du AuthContext
-- Redirige vers `/admin` si admin, `/` sinon
+Gère la connexion, l'inscription et la déconnexion.
 
-#### `pages/Register.jsx`
-- Formulaire d'inscription complet
-- Gère les erreurs de validation champ par champ
+**Comment ça marche :**
+- Le token et les données utilisateur sont stockés dans `localStorage`
+- Quand on se connecte ou déconnecte, un événement `auth-change` est envoyé
+- Tous les composants qui utilisent `useAuth()` reçoivent cet événement et se mettent à jour
 
-#### `pages/Home.jsx`
-- Catalogue paginé (20 produits/page)
-- Barre de recherche (filtre sur `nom`)
-- Sélecteur de catégorie
-- Bouton "Ajouter au panier" (visible seulement si connecté)
+```js
+import { useState, useEffect } from 'react'
+import api from '../api/axios'
 
-#### `pages/ProductDetail.jsx`
-- Affiche tous les détails du produit
-- Sélecteur de quantité (min 1, max stock)
+export function useAuth() {
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')))
+
+  useEffect(() => {
+    function sync() {
+      setUser(JSON.parse(localStorage.getItem('user')))
+    }
+    window.addEventListener('auth-change', sync)
+    return () => window.removeEventListener('auth-change', sync)
+  }, [])
+
+  function login(email, password) {
+    return api.post('/login', { email, password })
+      .then(({ data }) => {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        window.dispatchEvent(new Event('auth-change'))
+        return data.user
+      })
+  }
+
+  function register(payload) {
+    return api.post('/register', payload)
+      .then(({ data }) => {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        window.dispatchEvent(new Event('auth-change'))
+        return data.user
+      })
+  }
+
+  function logout() {
+    api.post('/logout').catch(() => {})
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.dispatchEvent(new Event('auth-change'))
+  }
+
+  return { user, login, register, logout }
+}
+```
+
+**Ce que retourne useAuth :**
+| Valeur | Description |
+|--------|-------------|
+| `user` | Objet utilisateur, ou `null` si non connecté |
+| `login(email, password)` | Fonction de connexion, retourne une Promise |
+| `register(payload)` | Fonction d'inscription, retourne une Promise |
+| `logout()` | Fonction de déconnexion |
+
+---
+
+### Hook useCart (`src/hooks/useCart.js`)
+
+Gère le panier de l'utilisateur.
+
+**Comment ça marche :**
+- `fetchCart()` appelle GET /cart et met à jour l'état local
+- Après chaque modification (ajout, suppression…), un événement `cart-change` est envoyé
+- La Navbar et la page Panier utilisent `useCart()` séparément mais restent synchronisées grâce à cet événement
+
+```js
+import { useState, useEffect } from 'react'
+import api from '../api/axios'
+
+export function useCart() {
+  const [cart, setCart] = useState({ items: [], total: 0 })
+
+  function fetchCart() {
+    if (!localStorage.getItem('user')) {
+      setCart({ items: [], total: 0 })
+      return
+    }
+    api.get('/cart')
+      .then(({ data }) => setCart(data))
+      .catch(() => setCart({ items: [], total: 0 }))
+  }
+
+  useEffect(() => {
+    fetchCart()
+    window.addEventListener('auth-change', fetchCart)
+    window.addEventListener('cart-change', fetchCart)
+    return () => {
+      window.removeEventListener('auth-change', fetchCart)
+      window.removeEventListener('cart-change', fetchCart)
+    }
+  }, [])
+
+  function addToCart(productId, quantite) {
+    return api.post('/cart', { product_id: productId, quantite: quantite || 1 })
+      .then(() => {
+        fetchCart()
+        window.dispatchEvent(new Event('cart-change'))
+      })
+  }
+
+  function updateItem(id, quantite) {
+    return api.put('/cart/' + id, { quantite: quantite })
+      .then(() => {
+        fetchCart()
+        window.dispatchEvent(new Event('cart-change'))
+      })
+  }
+
+  function removeItem(id) {
+    return api.delete('/cart/' + id)
+      .then(() => {
+        fetchCart()
+        window.dispatchEvent(new Event('cart-change'))
+      })
+  }
+
+  function clearCart() {
+    return api.delete('/cart')
+      .then(() => {
+        setCart({ items: [], total: 0 })
+        window.dispatchEvent(new Event('cart-change'))
+      })
+  }
+
+  const itemCount = cart.items.reduce((total, item) => total + item.quantite, 0)
+
+  return { cart, itemCount, addToCart, updateItem, removeItem, clearCart }
+}
+```
+
+**Ce que retourne useCart :**
+| Valeur | Description |
+|--------|-------------|
+| `cart` | `{ items: [], total: 0 }` |
+| `itemCount` | Nombre total d'articles (pour le badge Navbar) |
+| `addToCart(productId, quantite)` | Ajouter un produit |
+| `updateItem(id, quantite)` | Modifier la quantité |
+| `removeItem(id)` | Supprimer un article |
+| `clearCart()` | Vider le panier |
+
+---
+
+### Composants
+
+**Navbar** (`src/components/Navbar.jsx`)
+- Utilise `useAuth()` pour afficher le nom de l'utilisateur et le lien Admin
+- Utilise `useCart()` pour afficher le nombre d'articles dans le badge panier
+- Liens différents selon : non connecté / client / admin
+
+**ProtectedRoute / AdminRoute** (`src/components/ProtectedRoute.jsx`)
+- `ProtectedRoute` : redirige vers /login si l'utilisateur n'est pas connecté
+- `AdminRoute` : redirige vers /login si non connecté, vers / si non admin
+
+```jsx
+export function ProtectedRoute({ children }) {
+  const { user } = useAuth()
+  return user ? children : <Navigate to="/login" replace />
+}
+
+export function AdminRoute({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'admin') return <Navigate to="/" replace />
+  return children
+}
+```
+
+---
+
+### Pages client
+
+**Login** — Connexion
+```js
+const handle = (e) => {
+  e.preventDefault()
+  setLoading(true)
+  login(form.email, form.password)
+    .then((user) => navigate(user.role === 'admin' ? '/admin' : '/'))
+    .catch((err) => setError(err.response?.data?.message || 'Identifiants incorrects.'))
+    .finally(() => setLoading(false))
+}
+```
+
+**Register** — Inscription
+```js
+const handle = (e) => {
+  e.preventDefault()
+  setLoading(true)
+  register(form)
+    .then(() => navigate('/'))
+    .catch((err) => setErrors(err.response?.data?.errors || {}))
+    .finally(() => setLoading(false))
+}
+```
+
+**Home** — Catalogue
+- Liste des produits paginée (20 par page)
+- Barre de recherche + filtre par catégorie
+- Bouton "Ajouter au panier" si l'utilisateur est connecté
+
+**ProductDetail** — Détail d'un produit
+- Affiche les informations complètes du produit
+- Sélecteur de quantité (min 1, max stock disponible)
 - Bouton "Ajouter au panier"
 
-#### `pages/Cart.jsx`
+**Cart** — Panier
 - Liste des articles avec modification de quantité et suppression
-- Formulaire de commande (adresse, téléphone, notes)
-- Calcul et affichage du total
-- Soumet la commande via POST /orders
+- Formulaire : adresse, téléphone, notes
+- Total calculé et bouton "Confirmer la commande"
 
-#### `pages/Orders.jsx`
-- Liste des commandes de l'utilisateur
+**Orders** — Mes commandes
+- Liste de toutes les commandes de l'utilisateur
 - Accordéon : cliquer pour voir le détail (articles, adresse, téléphone)
-- Badge de statut coloré
+- Badge coloré selon le statut
 
-#### `pages/Profile.jsx`
+**Profile** — Mon profil
 - Modifier nom, téléphone, adresse
 - Changer le mot de passe (optionnel)
-- Feedback visuel de succès/erreur
-
-#### `pages/admin/Dashboard.jsx`
-- Statistiques : nb produits, catégories, commandes, commandes en attente
-- Liens rapides vers les 3 sections admin
-
-#### `pages/admin/AdminProducts.jsx`
-- Formulaire CRUD avec upload d'image
-- Liste paginée avec aperçu image, stock, statut actif
-- Modification inline (pré-remplit le formulaire)
-
-#### `pages/admin/AdminCategories.jsx`
-- Formulaire CRUD simple
-- Liste avec compteur de produits par catégorie
-
-#### `pages/admin/AdminOrders.jsx`
-- Toutes les commandes (paginées)
-- Accordéon avec détail de chaque commande
-- Boutons de changement de statut en un clic
 
 ---
 
-## Comptes de test
+### Pages admin
+
+**Dashboard** — Tableau de bord
+- 4 statistiques : nb produits, catégories, commandes, commandes en attente
+- Liens rapides vers les 3 sections admin
+
+**AdminProducts** — Gestion des produits
+- Formulaire : créer ou modifier un produit avec upload d'image
+- Liste paginée avec aperçu image, stock, statut actif/inactif
+- Boutons Modifier et Supprimer
+
+**AdminCategories** — Gestion des catégories
+- Formulaire : créer ou modifier une catégorie
+- Liste avec compteur de produits par catégorie
+
+**AdminOrders** — Gestion des commandes
+- Toutes les commandes avec filtre par statut
+- Accordéon avec détail de chaque commande (client, articles, adresse)
+- Boutons pour changer le statut : Confirmer → Livrer → Annuler
+
+---
+
+## 7. Comptes de test
 
 | Rôle | Email | Mot de passe |
 |------|-------|--------------|
 | Admin | admin@pharmacie.com | password |
 | Client | client@test.com | password |
 
-## Lancer le projet
+---
 
+## 8. Lancer le projet
+
+**Backend (port 8000)**
 ```bash
-# Backend (port 8000)
 cd backend
+composer install
+php artisan key:generate
+php artisan migrate --seed
+php artisan storage:link
 php artisan serve
+```
 
-# Frontend (port 5173)
+**Frontend (port 5173)**
+```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Accéder à : http://localhost:5173
+Ouvrir : http://localhost:5173

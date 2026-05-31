@@ -1,8 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
-import { useAuth } from '../context/AuthContext'
-import { useCart } from '../context/CartContext'
+import { useAuth } from '../hooks/useAuth'
+import { useCart } from '../hooks/useCart'
 
 export default function Home() {
   const { user } = useAuth()
@@ -31,10 +31,12 @@ export default function Home() {
     api.get('/categories').then(({ data }) => setCategories(data))
   }, [])
 
-  const handleAdd = async (productId) => {
+  const handleAdd = (productId) => {
     if (!user) return
     setAdding(productId)
-    try { await addToCart(productId) } finally { setAdding(null) }
+    addToCart(productId)
+      .then(() => setAdding(null))
+      .catch(() => setAdding(null))
   }
 
   return (

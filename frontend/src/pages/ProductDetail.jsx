@@ -1,8 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
-import { useAuth } from '../context/AuthContext'
-import { useCart } from '../context/CartContext'
+import { useAuth } from '../hooks/useAuth'
+import { useCart } from '../hooks/useCart'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -18,10 +18,12 @@ export default function ProductDetail() {
       .catch(() => navigate('/'))
   }, [id])
 
-  const handleAdd = async () => {
+  const handleAdd = () => {
     if (!user) return navigate('/login')
     setAdding(true)
-    try { await addToCart(product.id, qty) } finally { setAdding(false) }
+    addToCart(product.id, qty)
+      .then(() => setAdding(false))
+      .catch(() => setAdding(false))
   }
 
   if (!product) return <div className="flex justify-center p-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div></div>

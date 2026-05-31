@@ -1,14 +1,14 @@
 ﻿import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { useCart } from '../context/CartContext'
+import { useAuth } from '../hooks/useAuth'
+import { useCart } from '../hooks/useCart'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { itemCount } = useCart()
   const navigate = useNavigate()
 
-  const handleLogout = async () => {
-    await logout()
+  const handleLogout = () => {
+    logout()
     navigate('/login')
   }
 

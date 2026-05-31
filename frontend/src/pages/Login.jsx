@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Login() {
   const { login } = useAuth()
@@ -9,18 +9,14 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handle = async (e) => {
+  const handle = (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    try {
-      const user = await login(form.email, form.password)
-      navigate(user.role === 'admin' ? '/admin' : '/')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Identifiants incorrects.')
-    } finally {
-      setLoading(false)
-    }
+    login(form.email, form.password)
+      .then((user) => navigate(user.role === 'admin' ? '/admin' : '/'))
+      .catch((err) => setError(err.response?.data?.message || 'Identifiants incorrects.'))
+      .finally(() => setLoading(false))
   }
 
   return (

@@ -21,28 +21,26 @@ export default function AdminProducts() {
 
   const set = (f) => (e) => setForm({ ...form, [f]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
 
-  const save = async (e) => {
+  const save = (e) => {
     e.preventDefault()
     setSaving(true)
-    try {
-      const fd = new FormData()
-      Object.entries(form).forEach(([k, v]) => { if (v !== '') fd.append(k, v) })
-      if (fileRef.current?.files[0]) fd.append('image', fileRef.current.files[0])
-      if (editing) {
-        fd.append('_method', 'PUT')
-        await api.post(`/products/${editing}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      } else {
-        await api.post('/products', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      }
-      setForm(empty); setEditing(null)
-      if (fileRef.current) fileRef.current.value = ''
-      fetchProducts()
-    } finally { setSaving(false) }
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => { if (v !== '') fd.append(k, v) })
+    if (fileRef.current?.files[0]) fd.append('image', fileRef.current.files[0])
+    if (editing) fd.append('_method', 'PUT')
+    const url = editing ? `/products/${editing}` : '/products'
+    api.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then(() => {
+        setForm(empty); setEditing(null)
+        if (fileRef.current) fileRef.current.value = ''
+        fetchProducts()
+      })
+      .finally(() => setSaving(false))
   }
 
-  const del = async (id) => {
+  const del = (id) => {
     if (!confirm('Supprimer ce produit ?')) return
-    await api.delete(`/products/${id}`); fetchProducts()
+    api.delete(`/products/${id}`).then(() => fetchProducts())
   }
 
   const startEdit = (p) => {

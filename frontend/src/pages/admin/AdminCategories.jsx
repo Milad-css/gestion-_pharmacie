@@ -10,18 +10,20 @@ export default function AdminCategories() {
   const fetch = () => api.get('/categories').then(({ data }) => setCategories(data))
   useEffect(() => { fetch() }, [])
 
-  const save = async (e) => {
+  const save = (e) => {
     e.preventDefault()
     setSaving(true)
-    try {
-      editing ? await api.put(`/categories/${editing}`, form) : await api.post('/categories', form)
-      setForm({ nom: '', description: '' }); setEditing(null); fetch()
-    } finally { setSaving(false) }
+    const request = editing
+      ? api.put(`/categories/${editing}`, form)
+      : api.post('/categories', form)
+    request
+      .then(() => { setForm({ nom: '', description: '' }); setEditing(null); fetch() })
+      .finally(() => setSaving(false))
   }
 
-  const del = async (id) => {
+  const del = (id) => {
     if (!confirm('Supprimer cette catégorie ?')) return
-    await api.delete(`/categories/${id}`); fetch()
+    api.delete(`/categories/${id}`).then(() => fetch())
   }
 
   const startEdit = (c) => { setEditing(c.id); setForm({ nom: c.nom, description: c.description || '' }) }

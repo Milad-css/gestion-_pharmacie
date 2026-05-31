@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
+import { useCart } from '../hooks/useCart'
 import api from '../api/axios'
 
 export default function Cart() {
@@ -10,18 +10,14 @@ export default function Cart() {
   const [ordering, setOrdering] = useState(false)
   const [error, setError] = useState('')
 
-  const handleOrder = async (e) => {
+  const handleOrder = (e) => {
     e.preventDefault()
     setError('')
     setOrdering(true)
-    try {
-      await api.post('/orders', form)
-      navigate('/orders')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la commande.')
-    } finally {
-      setOrdering(false)
-    }
+    api.post('/orders', form)
+      .then(() => navigate('/orders'))
+      .catch((err) => setError(err.response?.data?.message || 'Erreur lors de la commande.'))
+      .finally(() => setOrdering(false))
   }
 
   if (cart.items.length === 0) {

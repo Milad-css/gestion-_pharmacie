@@ -70,9 +70,8 @@ export default function AdminOrders() {
 
   useEffect(load, [])
 
-  const updateStatus = async (id, statut) => {
-    await api.put(`/admin/orders/${id}`, { statut })
-    load()
+  const updateStatus = (id, statut) => {
+    api.put(`/admin/orders/${id}`, { statut }).then(() => load())
   }
 
   const filtered = filter === 'tous' ? orders : orders.filter(o => o.statut === filter)

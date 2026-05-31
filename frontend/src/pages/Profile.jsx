@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import api from '../api/axios'
 
 export default function Profile() {
@@ -9,21 +9,19 @@ export default function Profile() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const handle = async (e) => {
+  const handle = (e) => {
     e.preventDefault()
     setSuccess(''); setError('')
     setSaving(true)
     const payload = { name: form.name, telephone: form.telephone, adresse: form.adresse }
     if (form.password) { payload.password = form.password; payload.password_confirmation = form.password_confirmation }
-    try {
-      await api.put('/profile', payload)
-      setSuccess('Profil mis à jour.')
-      setForm({ ...form, password: '', password_confirmation: '' })
-    } catch (err) {
-      setError(err.response?.data?.message || 'Erreur.')
-    } finally {
-      setSaving(false)
-    }
+    api.put('/profile', payload)
+      .then(() => {
+        setSuccess('Profil mis à jour.')
+        setForm({ ...form, password: '', password_confirmation: '' })
+      })
+      .catch((err) => setError(err.response?.data?.message || 'Erreur.'))
+      .finally(() => setSaving(false))
   }
 
   return (

@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Register() {
   const { register } = useAuth()
@@ -11,18 +11,14 @@ export default function Register() {
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
 
-  const handle = async (e) => {
+  const handle = (e) => {
     e.preventDefault()
     setErrors({})
     setLoading(true)
-    try {
-      await register(form)
-      navigate('/')
-    } catch (err) {
-      setErrors(err.response?.data?.errors || { general: err.response?.data?.message || 'Erreur.' })
-    } finally {
-      setLoading(false)
-    }
+    register(form)
+      .then(() => navigate('/'))
+      .catch((err) => setErrors(err.response?.data?.errors || { general: err.response?.data?.message || 'Erreur.' }))
+      .finally(() => setLoading(false))
   }
 
   return (
