@@ -11,7 +11,7 @@ Elle permet à des clients de commander des médicaments, et à l'administrateur
 
 | Côté | Technologies |
 |------|-------------|
-| Backend | PHP 8, Laravel 13, SQLite, Laravel Sanctum |
+| Backend | PHP 8, Laravel 13, mysq , Laravel Sanctum |
 | Frontend | React 18, Vite, Tailwind CSS, Axios |
 
 ---

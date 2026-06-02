@@ -28,7 +28,6 @@ export function useCart() {
     return api.post('/cart', { product_id: productId, quantite: quantite || 1 })
       .then(() => {
         fetchCart()
-        window.dispatchEvent(new Event('cart-change'))
       })
   }
 
@@ -36,7 +35,6 @@ export function useCart() {
     return api.put('/cart/' + id, { quantite: quantite })
       .then(() => {
         fetchCart()
-        window.dispatchEvent(new Event('cart-change'))
       })
   }
 
@@ -52,7 +50,6 @@ export function useCart() {
     return api.delete('/cart')
       .then(() => {
         setCart({ items: [], total: 0 })
-        window.dispatchEvent(new Event('cart-change'))
       })
   }
 
