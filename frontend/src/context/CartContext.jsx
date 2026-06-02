@@ -1,6 +1,6 @@
 ﻿import { createContext, useContext, useEffect, useState } from 'react'
 import api from '../api/axios'
-import { useAuth } from './AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 const CartContext = createContext(null)
 

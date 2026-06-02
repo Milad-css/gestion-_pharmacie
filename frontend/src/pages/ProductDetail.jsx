@@ -1,8 +1,9 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../hooks/useAuth'
 import { useCart } from '../hooks/useCart'
+import ProductImage from '../components/ProductImage'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -12,6 +13,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null)
   const [qty, setQty] = useState(1)
   const [adding, setAdding] = useState(false)
+  const [added, setAdded] = useState(false)
 
   useEffect(() => {
     api.get(`/products/${id}`).then(({ data }) => setProduct(data))
@@ -22,55 +24,82 @@ export default function ProductDetail() {
     if (!user) return navigate('/login')
     setAdding(true)
     addToCart(product.id, qty)
-      .then(() => setAdding(false))
+      .then(() => { setAdding(false); setAdded(true); setTimeout(() => setAdded(false), 2000) })
       .catch(() => setAdding(false))
   }
 
-  if (!product) return <div className="flex justify-center p-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div></div>
+  if (!product) return (
+    <div className="flex justify-center p-24">
+      <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <button onClick={() => navigate(-1)} className="text-sm text-emerald-600 hover:underline mb-6 flex items-center gap-1">
-        &larr; Retour
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 mb-8 transition-colors font-medium">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Retour
       </button>
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col md:flex-row gap-8">
-        <div className="md:w-1/2 h-64 bg-emerald-50 rounded-xl flex items-center justify-center">
-          {product.image ? (
-            <img src={`http://localhost:8000/storage/${product.image}`} alt={product.nom} className="h-full w-full object-cover rounded-xl" />
-          ) : (
-            <svg className="w-24 h-24 text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-          )}
-        </div>
-        <div className="md:w-1/2 flex flex-col justify-between">
-          <div>
-            <p className="text-sm text-emerald-600 font-medium mb-1">{product.category?.nom}</p>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">{product.nom}</h1>
-            <p className="text-gray-600 text-sm leading-relaxed mb-4">{product.description}</p>
-            {product.date_expiration && (
-              <p className="text-xs text-gray-400 mb-2">Exp: {product.date_expiration}</p>
-            )}
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex flex-col md:flex-row">
+          <div className="md:w-2/5 flex-shrink-0">
+            <ProductImage image={product.image} category={product.category} name={product.nom} className="h-72 md:h-full min-h-72" />
           </div>
-          <div>
-            <p className="text-3xl font-bold text-gray-900 mb-4">{Number(product.prix).toFixed(2)} DA</p>
-            <p className={`text-sm font-medium mb-4 ${product.stock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-              {product.stock > 0 ? `${product.stock} en stock` : 'Rupture de stock'}
-            </p>
-            {product.stock > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3 py-2 text-gray-600 hover:text-gray-900">−</button>
-                  <span className="px-4 py-2 text-sm font-medium">{qty}</span>
-                  <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-3 py-2 text-gray-600 hover:text-gray-900">+</button>
+
+          <div className="flex-1 p-8 flex flex-col justify-between">
+            <div>
+              {product.category?.nom && (
+                <span className="inline-block text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full mb-4">{product.category.nom}</span>
+              )}
+              <h1 className="text-2xl font-bold text-slate-900 mb-3">{product.nom}</h1>
+              <p className="text-slate-500 text-sm leading-relaxed mb-5">{product.description}</p>
+              {product.date_expiration && (
+                <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Expire le {product.date_expiration}
                 </div>
-                <button onClick={handleAdd} disabled={adding}
-                  className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
-                  {adding ? '...' : 'Ajouter au panier'}
-                </button>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 pt-6">
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="text-3xl font-bold text-slate-900">{Number(product.prix).toFixed(2)}</span>
+                <span className="text-lg text-slate-500 font-medium">DA</span>
               </div>
-            )}
+              <div className={`inline-flex items-center gap-1.5 text-sm font-medium mb-6 px-3 py-1.5 rounded-full ${product.stock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                {product.stock > 0 ? `${product.stock} en stock` : 'Rupture de stock'}
+              </div>
+
+              {product.stock > 0 && (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">−</button>
+                    <span className="px-4 py-2.5 text-sm font-semibold text-slate-900 min-w-10 text-center">{qty}</span>
+                    <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">+</button>
+                  </div>
+                  <button onClick={handleAdd} disabled={adding || added}
+                    className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${added ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'}`}>
+                    {adding ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Ajout...
+                      </span>
+                    ) : added ? '✓ Ajouté au panier' : 'Ajouter au panier'}
+                  </button>
+                </div>
+              )}
+              {!user && (
+                <button onClick={() => navigate('/login')} className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors">
+                  Se connecter pour commander
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import api from '../api/axios'
 
@@ -17,52 +17,90 @@ export default function Profile() {
     if (form.password) { payload.password = form.password; payload.password_confirmation = form.password_confirmation }
     api.put('/profile', payload)
       .then(() => {
-        setSuccess('Profil mis à jour.')
+        setSuccess('Profil mis à jour avec succès.')
         setForm({ ...form, password: '', password_confirmation: '' })
       })
       .catch((err) => setError(err.response?.data?.message || 'Erreur.'))
       .finally(() => setSaving(false))
   }
 
+  const inputClass = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-slate-50 transition-all"
+
+  const avatarColors = ['bg-indigo-600', 'bg-violet-600', 'bg-teal-600', 'bg-rose-600']
+  const colorIndex = user.name.charCodeAt(0) % avatarColors.length
+
   return (
-    <div className="max-w-xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Mon profil</h1>
-      <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-bold">
-            {user.name[0].toUpperCase()}
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900">{user.name}</p>
-            <p className="text-sm text-gray-500">{user.email}</p>
-            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium capitalize">{user.role}</span>
+    <div className="max-w-2xl mx-auto px-6 py-10">
+      <h1 className="text-2xl font-bold text-slate-900 mb-8">Mon profil</h1>
+
+      <div className="bg-white border border-slate-100 shadow-sm rounded-2xl overflow-hidden">
+        {/* Profile header */}
+        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-8">
+          <div className="flex items-center gap-5">
+            <div className={`w-16 h-16 rounded-2xl ${avatarColors[colorIndex]} flex items-center justify-center text-2xl font-bold text-white shadow-lg`}>
+              {user.name[0].toUpperCase()}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{user.name}</h2>
+              <p className="text-slate-400 text-sm mt-0.5">{user.email}</p>
+              <span className="inline-block mt-2 text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full capitalize">
+                {user.role}
+              </span>
+            </div>
           </div>
         </div>
-        {success && <p className="bg-emerald-50 text-emerald-700 text-sm p-3 rounded-lg mb-4">{success}</p>}
-        {error && <p className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</p>}
-        <form onSubmit={handle} className="space-y-4">
-          {[['Nom', 'name'], ['Téléphone', 'telephone'], ['Adresse', 'adresse']].map(([label, field]) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+
+        {/* Form */}
+        <div className="p-8">
+          {success && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm p-4 rounded-xl mb-6 flex items-center gap-2.5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {success}
             </div>
-          ))}
-          <div className="border-t border-gray-200 pt-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Changer le mot de passe (optionnel)</p>
-            {[['Nouveau mot de passe', 'password'], ['Confirmer', 'password_confirmation']].map(([label, field]) => (
-              <div key={field} className="mb-3">
-                <label className="block text-sm text-gray-600 mb-1">{label}</label>
-                <input type="password" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-4 rounded-xl mb-6 flex items-center gap-2.5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handle} className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Informations personnelles</h3>
+              <div className="space-y-4">
+                {[['Nom complet', 'name', 'text'], ['Téléphone', 'telephone', 'text'], ['Adresse', 'adresse', 'text']].map(([label, field, type]) => (
+                  <div key={field}>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+                    <input type={type} value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} className={inputClass} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <button type="submit" disabled={saving}
-            className="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
-            {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-          </button>
-        </form>
+            </div>
+
+            <div className="border-t border-slate-100 pt-5">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Changer le mot de passe</h3>
+              <div className="space-y-4">
+                {[['Nouveau mot de passe', 'password'], ['Confirmer le mot de passe', 'password_confirmation']].map(([label, field]) => (
+                  <div key={field}>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+                    <input type="password" value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                      placeholder="Laisser vide pour ne pas changer" className={inputClass} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button type="submit" disabled={saving}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
