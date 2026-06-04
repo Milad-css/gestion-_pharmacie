@@ -63,7 +63,7 @@ export default function Orders() {
                     <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
                     {s.label}
                   </span>
-                  <span className="font-bold text-slate-900 text-sm">{Number(order.total).toFixed(2)} DA</span>
+                  <span className="font-bold text-slate-900 text-sm">{Number(order.total).toFixed(2)} DH</span>
                   <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open === order.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -96,12 +96,12 @@ export default function Orders() {
                     {order.items.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-slate-700">{item.product?.nom} <span className="text-slate-400">× {item.quantite}</span></span>
-                        <span className="font-semibold text-slate-900">{(item.prix_unitaire * item.quantite).toFixed(2)} DA</span>
+                        <span className="font-semibold text-slate-900">{(item.prix_unitaire * item.quantite).toFixed(2)} DH</span>
                       </div>
                     ))}
                     <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-100 pt-3 mt-3">
                       <span>Total</span>
-                      <span>{Number(order.total).toFixed(2)} DA</span>
+                      <span>{Number(order.total).toFixed(2)} DH</span>
                     </div>
                   </div>
                 </div>

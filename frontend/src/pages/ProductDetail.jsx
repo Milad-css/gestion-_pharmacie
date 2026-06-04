@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../context/CartContext'
 import ProductImage from '../components/ProductImage'
 
 export default function ProductDetail() {
@@ -19,7 +19,7 @@ export default function ProductDetail() {
     api.get(`/products/${id}`).then(({ data }) => setProduct(data))
       .catch(() => navigate('/'))
   }, [id])
-
+  // ajout d'un produit au panier 
   const handleAdd = () => {
     if (!user) return navigate('/login')
     setAdding(true)
@@ -27,7 +27,7 @@ export default function ProductDetail() {
       .then(() => { setAdding(false); setAdded(true); setTimeout(() => setAdded(false), 2000) })
       .catch(() => setAdding(false))
   }
-
+  // afichage d'un message si on trouve pas le produit dans la basé de données 
   if (!product) return (
     <div className="flex justify-center p-24">
       <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -69,7 +69,7 @@ export default function ProductDetail() {
             <div className="border-t border-slate-100 pt-6">
               <div className="flex items-baseline gap-2 mb-3">
                 <span className="text-3xl font-bold text-slate-900">{Number(product.prix).toFixed(2)}</span>
-                <span className="text-lg text-slate-500 font-medium">DA</span>
+                <span className="text-lg text-slate-500 font-medium">DH</span>
               </div>
               <div className={`inline-flex items-center gap-1.5 text-sm font-medium mb-6 px-3 py-1.5 rounded-full ${product.stock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
@@ -79,12 +79,13 @@ export default function ProductDetail() {
               {product.stock > 0 && (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">−</button>
+                    <button onClick={() => setQty(qty -1)} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">−</button>
                     <span className="px-4 py-2.5 text-sm font-semibold text-slate-900 min-w-10 text-center">{qty}</span>
-                    <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">+</button>
+                    <button onClick={() => setQty(qty + 1)} className="px-3.5 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-lg font-light">+</button>
                   </div>
                   <button onClick={handleAdd} disabled={adding || added}
                     className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${added ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'}`}>
+                    
                     {adding ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -94,6 +95,7 @@ export default function ProductDetail() {
                   </button>
                 </div>
               )}
+            
               {!user && (
                 <button onClick={() => navigate('/login')} className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors">
                   Se connecter pour commander

@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../context/CartContext'
 import ProductImage from '../components/ProductImage'
+
+const SearchIcon = () => (
+  <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+)
 
 export default function Home() {
   const { user } = useAuth()
@@ -22,10 +28,9 @@ export default function Home() {
     const params = new URLSearchParams({ page })
     if (categoryId) params.set('category_id', categoryId)
     if (search) params.set('search', search)
-    api.get(`/products?${params}`).then(({ data }) => {
-      setProducts(data.data)
-      setMeta(data)
-    }).finally(() => setLoading(false))
+    api.get(`/products?${params}`)
+      .then(({ data }) => { setProducts(data.data); setMeta(data) })
+      .finally(() => setLoading(false))
   }, [categoryId, search, page])
 
   useEffect(() => {
@@ -35,30 +40,28 @@ export default function Home() {
   const handleAdd = (productId) => {
     if (!user) return
     setAdding(productId)
-    addToCart(productId)
-      .then(() => setAdding(null))
-      .catch(() => setAdding(null))
+    addToCart(productId).finally(() => setAdding(null))
   }
 
   return (
     <div>
-      {/* Hero search */}
       <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Vos médicaments, en quelques clics</h1>
           <p className="text-slate-400 text-sm mb-7">Parcourez notre catalogue et passez commande facilement</p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
             <div className="flex-1 relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <SearchIcon />
               <input
                 type="text" placeholder="Rechercher un produit..."
                 value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                className="w-full bg-white rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 shadow-sm" />
+                className="w-full bg-white rounded-xl pl-11 pr-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400 shadow-sm"
+              />
             </div>
-            <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setPage(1) }}
-              className="bg-white rounded-xl px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm min-w-44">
+            <select
+              value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setPage(1) }}
+              className="bg-white rounded-xl px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm min-w-44"
+            >
               <option value="">Toutes les catégories</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
             </select>
@@ -66,7 +69,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Products */}
       <div className="max-w-7xl mx-auto px-6 py-10">
         {loading ? (
           <div className="flex justify-center py-24">
@@ -99,12 +101,12 @@ export default function Home() {
                   <Link to={`/products/${p.id}`} className="font-semibold text-slate-900 hover:text-indigo-600 text-sm leading-snug mb-1 transition-colors">{p.nom}</Link>
                   <p className="text-xs text-slate-400 line-clamp-2 flex-1 mt-1">{p.description}</p>
                   <div className="flex items-center justify-between mt-4">
-                    <span className="text-lg font-bold text-slate-900">{Number(p.prix).toFixed(2)} <span className="text-sm font-medium text-slate-500">DA</span></span>
+                    <span className="text-lg font-bold text-slate-900">{Number(p.prix).toFixed(2)} <span className="text-sm font-medium text-slate-500">DH</span></span>
                     {p.stock > 0 && (
                       <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{p.stock} en stock</span>
                     )}
                   </div>
-                  {user && p.stock > 0 && (
+                  {user && p.stock > 0 ? (
                     <button onClick={() => handleAdd(p.id)} disabled={adding === p.id}
                       className="mt-3 w-full bg-indigo-600 text-white text-sm py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium">
                       {adding === p.id ? (
@@ -114,19 +116,18 @@ export default function Home() {
                         </span>
                       ) : 'Ajouter au panier'}
                     </button>
-                  )}
-                  {!user && (
+                  ) : !user ? (
                     <Link to="/login" className="mt-3 block text-center bg-slate-100 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-200 transition-colors font-medium">
                       Connexion pour commander
                     </Link>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {meta && meta.last_page > 1 && (
+        {meta?.last_page > 1 && (
           <div className="flex justify-center gap-2 mt-10">
             {Array.from({ length: meta.last_page }, (_, i) => i + 1).map((p) => (
               <button key={p} onClick={() => setPage(p)}

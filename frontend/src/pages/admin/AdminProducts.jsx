@@ -67,7 +67,7 @@ export default function AdminProducts() {
             <form onSubmit={save} className="space-y-4">
               {[
                 ['Nom du produit', 'nom', 'text', true],
-                ['Prix (DA)', 'prix', 'number', true],
+                ['Prix (DH)', 'prix', 'number', true],
                 ['Stock', 'stock', 'number', false],
                 ['Date d\'expiration', 'date_expiration', 'date', false],
               ].map(([label, field, type, req]) => (
@@ -133,7 +133,7 @@ export default function AdminProducts() {
                   <p className="font-semibold text-slate-900 text-sm truncate">{p.nom}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{p.category?.nom || 'Sans catégorie'} · {p.stock} en stock</p>
                 </div>
-                <p className="text-sm font-bold text-slate-900 flex-shrink-0">{Number(p.prix).toFixed(2)} DA</p>
+                <p className="text-sm font-bold text-slate-900 flex-shrink-0">{Number(p.prix).toFixed(2)} DH</p>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${p.actif ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                   {p.actif ? 'Actif' : 'Inactif'}
                 </span>

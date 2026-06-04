@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../hooks/useCart'
+import { useCart } from '../context/CartContext'
 import api from '../api/axios'
 
 export default function Cart() {
@@ -12,6 +12,10 @@ export default function Cart() {
 
   const handleOrder = (e) => {
     e.preventDefault()
+    if (!form.adresse || !form.telephone) {
+      setError('veuillez remplir tous les champs obligatoires.')
+      return;
+    }
     setError('')
     setOrdering(true)
     api.post('/orders', form)
@@ -67,15 +71,15 @@ export default function Cart() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 text-sm truncate">{item.product?.nom}</p>
-                <p className="text-indigo-600 text-sm font-medium mt-0.5">{Number(item.product?.prix).toFixed(2)} DA / unité</p>
+                <p className="text-indigo-600 text-sm font-medium mt-0.5">{Number(item.product?.prix).toFixed(2)} DH / unité</p>
               </div>
               <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                <button onClick={() => updateItem(item.id, Math.max(1, item.quantite - 1))} className="px-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">−</button>
+                <button onClick={() => updateItem(item.id,item.quantite - 1)} className="px-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">−</button>
                 <span className="px-3 py-2 text-sm font-semibold text-slate-900 min-w-8 text-center">{item.quantite}</span>
                 <button onClick={() => updateItem(item.id, item.quantite + 1)} className="px-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">+</button>
               </div>
               <p className="text-sm font-bold text-slate-900 w-24 text-right">
-                {(Number(item.product?.prix) * item.quantite).toFixed(2)} DA
+                {(Number(item.product.prix) * item.quantite).toFixed(2)} DH
               </p>
               <button onClick={() => removeItem(item.id)} className="text-slate-300 hover:text-red-500 transition-colors ml-1 p-1">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,7 +120,7 @@ export default function Cart() {
               <div className="border-t border-slate-100 pt-4 mt-2">
                 <div className="flex justify-between items-center mb-5">
                   <span className="font-semibold text-slate-700">Total</span>
-                  <span className="text-xl font-bold text-slate-900">{Number(cart.total).toFixed(2)} <span className="text-base font-medium text-slate-500">DA</span></span>
+                  <span className="text-xl font-bold text-slate-900">{Number(cart.total).toFixed(2)} <span className="text-base font-medium text-slate-500">DH</span></span>
                 </div>
               </div>
               <button type="submit" disabled={ordering}
